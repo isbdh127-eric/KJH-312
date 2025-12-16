@@ -6,6 +6,20 @@ let currentPage = 1;
 const pageSize = 50;
 let currentFilterType = "全部";
 
+/* ✅ 新增：醫療項目清單（下拉只出現你指定的這些） */
+const fixedServiceOptions = [
+  "居家醫療醫療",
+  "重度居家醫療",
+  "安寧居家療護",
+  "居家呼吸照護",
+  "居家中醫醫療",
+  "居家藥事照護",
+  "在宅急症照護"
+];
+
+/* ✅ 新增：把 serviceData 變成「醫事機構名稱 → 該行資料」的快速查找表 */
+let serviceByNameMap = new Map();
+
 function csvToJson(csv) {
   const lines = csv.split("\n").filter(x => x.trim());
   const headers = lines[0].split(",").map(h => h.trim());
@@ -66,8 +80,6 @@ function populateCityList() {
   });
 }
 
-
-
 function populateDistrictList() {
   const city = document.getElementById("citySelect").value;
   const sel = document.getElementById("districtSelect");
@@ -81,6 +93,50 @@ function populateDistrictList() {
     });
   }
 
+  searchData();
+}
+
+/* ✅ 新增：第三個下拉（醫療項目）選單內容 */
+function populateServiceList() {
+  const sel = document.getElementById("serviceSelect");
+  if (!sel) return;
+
+  sel.innerHTML = `<option value="全部">全部醫療項目</option>`;
+  fixedServiceOptions.forEach(item => {
+    const opt = document.createElement("option");
+    opt.value = opt.textContent = item;
+    sel.appendChild(opt);
+  });
+}
+
+/* ✅ 新增：建立 serviceByNameMap（加速查找） */
+function buildServiceNameMap() {
+  serviceByNameMap = new Map();
+
+  serviceData.forEach(s => {
+    const n = (s["醫事機構名稱"] || "").trim();
+    if (!n) return;
+    if (!serviceByNameMap.has(n)) {
+      serviceByNameMap.set(n, s);
+    }
+  });
+}
+
+/* ✅ 新增：用你原本 showDetails 的「includes 比對」方式去找對應服務列 */
+function findServiceRowByOrgName(orgName) {
+  if (!orgName) return null;
+
+  // 先用 Map 精確找
+  if (serviceByNameMap.has(orgName)) return serviceByNameMap.get(orgName);
+
+  // 找不到就用原本的 includes 策略（跟 showDetails 一樣）
+  const found = serviceData.find(s =>
+    s["醫事機構名稱"] &&
+    orgName &&
+    s["醫事機構名稱"].includes(orgName)
+  );
+  return found || null;
+}
 
 function quickFilter(type) {
   currentFilterType = type; 
@@ -353,22 +409,17 @@ function searchData() {
   const city = document.getElementById("citySelect").value;
   const dist = document.getElementById("districtSelect").value;
   const key = document.getElementById("keyword").value.trim();
-  const service = document.getElementById("serviceSelect").value;
 
+  /* ✅ 新增：讀第三個下拉的值 */
+  const serviceItemEl = document.getElementById("serviceSelect");
+  const serviceItem = serviceItemEl ? serviceItemEl.value : "全部";
 
   let filteredByLocationAndKeyword = allData.filter(d => {
     const addr = d["醫事機構地址"] || "";
     const name = d["醫事機構名稱"] || "";
     const phone = d["醫事機構電話"] || "";
     const team = d["整合團隊名稱"] || "";
-    const serviceOK =
-  service === "全部" ||
-  serviceData.some(s =>
-    s["醫事機構名稱"] &&
-    d["醫事機構名稱"] &&
-    s["醫事機構名稱"].includes(d["醫事機構名稱"]) &&
-    s[service] == 1
-  );
+
     return (
       (city === "全部" || addr.includes(city)) &&
       (dist === "全部" || addr.includes(dist)) &&
@@ -377,7 +428,6 @@ function searchData() {
         name.includes(key) ||
         phone.includes(key) ||
         team.includes(key))
-	serviceOK
     );
   });
 
@@ -397,6 +447,18 @@ function searchData() {
     finalFilteredData = filteredByLocationAndKeyword.filter(d =>
       keywords.some(k => (d["醫事機構名稱"] || "").includes(k))
     );
+  }
+
+  /* ✅ 新增：最後再加上「醫療項目」的條件 */
+  if (serviceItem !== "全部") {
+    finalFilteredData = finalFilteredData.filter(d => {
+      const orgName = (d["醫事機構名稱"] || "").trim();
+      const row = findServiceRowByOrgName(orgName);
+      if (!row) return false;
+
+      // services.csv 裡通常是 1/0（你 showDetails 也是用 value == 1 判斷）
+      return row[serviceItem] == 1;
+    });
   }
 
   currentData = finalFilteredData;
@@ -439,12 +501,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   populateCityList();
   populateDistrictList();
 
+  /* ✅ 新增：先把醫療項目下拉塞好（不等 serviceData 也可以先顯示選單） */
+  populateServiceList();
+
   try {
     const r = await fetch(
       "https://raw.githubusercontent.com/kileyou123-maker/health-dashboard/refs/heads/main/services.csv"
     );
     const t = await r.text();
     serviceData = csvToJson(t);
+
+    /* ✅ 新增：建立 Map，加速第三個下拉篩選 */
+    buildServiceNameMap();
+
   } catch (e) {
     console.error("服務資料載入失敗：", e);
   }
@@ -464,9 +533,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("districtSelect").addEventListener("change", () => {
     searchData();
   });
-  document.getElementById("districtSelect").addEventListener("change", () => {
-    searchData();
-  });
+
+  /* ✅ 新增：第三個下拉 change 時也要重新篩選 */
+  const serviceSelect = document.getElementById("serviceSelect");
+  if (serviceSelect) {
+    serviceSelect.addEventListener("change", () => {
+      searchData();
+    });
+  }
 
   document.getElementById("searchBtn").addEventListener("click", searchData);
 
