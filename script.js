@@ -81,8 +81,6 @@ function populateDistrictList() {
     });
   }
 
-  searchData();
-}
 
 function quickFilter(type) {
   currentFilterType = type; 
@@ -355,13 +353,22 @@ function searchData() {
   const city = document.getElementById("citySelect").value;
   const dist = document.getElementById("districtSelect").value;
   const key = document.getElementById("keyword").value.trim();
+  const service = document.getElementById("serviceSelect").value;
+
 
   let filteredByLocationAndKeyword = allData.filter(d => {
     const addr = d["醫事機構地址"] || "";
     const name = d["醫事機構名稱"] || "";
     const phone = d["醫事機構電話"] || "";
     const team = d["整合團隊名稱"] || "";
-
+    const serviceOK =
+  service === "全部" ||
+  serviceData.some(s =>
+    s["醫事機構名稱"] &&
+    d["醫事機構名稱"] &&
+    s["醫事機構名稱"].includes(d["醫事機構名稱"]) &&
+    s[service] == 1
+  );
     return (
       (city === "全部" || addr.includes(city)) &&
       (dist === "全部" || addr.includes(dist)) &&
@@ -370,6 +377,7 @@ function searchData() {
         name.includes(key) ||
         phone.includes(key) ||
         team.includes(key))
+	serviceOK
     );
   });
 
@@ -453,6 +461,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     populateDistrictList();
   });
 
+  document.getElementById("districtSelect").addEventListener("change", () => {
+    searchData();
+  });
   document.getElementById("districtSelect").addEventListener("change", () => {
     searchData();
   });
