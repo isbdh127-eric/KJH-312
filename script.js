@@ -66,8 +66,6 @@ function populateCityList() {
   });
 }
 
-
-
 function populateDistrictList() {
   const city = document.getElementById("citySelect").value;
   const sel = document.getElementById("districtSelect");
@@ -83,7 +81,7 @@ function populateDistrictList() {
 }
 
 function quickFilter(type) {
-  currentFilterType = type; 
+  currentFilterType = type;
 
   document.querySelectorAll(".filter-btn").forEach(btn =>
     btn.classList.remove("active")
@@ -92,7 +90,7 @@ function quickFilter(type) {
     .querySelector(`.filter-btn[data-type="${type}"]`)
     .classList.add("active");
 
-  searchData(); 
+  searchData();
 }
 
 function renderTablePage() {
@@ -355,35 +353,33 @@ function searchData() {
   const key = document.getElementById("keyword").value.trim();
   const service = document.getElementById("serviceSelect").value;
 
+  let filteredByLocationAndKeyword = allData.filter(d => {
+    const addr = d["醫事機構地址"] || "";
+    const name = d["醫事機構名稱"] || "";
+    const phone = d["醫事機構電話"] || "";
+    const team = d["整合團隊名稱"] || "";
 
-let filteredByLocationAndKeyword = allData.filter(d => {
-  const addr = d["醫事機構地址"] || "";
-  const name = d["醫事機構名稱"] || "";
-  const phone = d["醫事機構電話"] || "";
-  const team = d["整合團隊名稱"] || "";
+    // 服務項目條件（你要加在 return(...) 裡的最後一個條件，就是它）
+    const serviceOK =
+      service === "全部" || service === "" || serviceData.length === 0 ||
+      serviceData.some(s =>
+        s["醫事機構名稱"] &&
+        d["醫事機構名稱"] &&
+        s["醫事機構名稱"].includes(d["醫事機構名稱"]) &&
+        s[service] == 1
+      );
 
-  
-  const serviceOK =
-    service === "全部" ||
-    serviceData.some(s =>
-      s["醫事機構名稱"] &&
-      d["醫事機構名稱"] &&
-      s["醫事機構名稱"].includes(d["醫事機構名稱"]) &&
-      s[service] == 1
+    return (
+      (city === "全部" || addr.includes(city)) &&
+      (dist === "全部" || addr.includes(dist)) &&
+      (!key ||
+        addr.includes(key) ||
+        name.includes(key) ||
+        phone.includes(key) ||
+        team.includes(key)) &&
+      serviceOK
     );
-
-  return (
-    (city === "全部" || addr.includes(city)) &&
-    (dist === "全部" || addr.includes(dist)) &&
-    (!key ||
-      addr.includes(key) ||
-      name.includes(key) ||
-      phone.includes(key) ||
-      team.includes(key)) &&
-    serviceOK
-  );
-});
-
+  });
 
   let finalFilteredData = filteredByLocationAndKeyword;
 
@@ -457,23 +453,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderTablePage();
   document.getElementById("status").textContent =
     `顯示類別：全部（共 ${currentData.length} 筆資料）`;
-  
-  document.querySelector(`.filter-btn[data-type="${currentFilterType}"]`).classList.add("active");
 
+  document.querySelector(`.filter-btn[data-type="${currentFilterType}"]`).classList.add("active");
 
   document.getElementById("citySelect").addEventListener("change", () => {
     populateDistrictList();
+    searchData();
   });
 
   document.getElementById("districtSelect").addEventListener("change", () => {
     searchData();
   });
-  document.getElementById("districtSelect").addEventListener("change", () => {
+
+  // ✅ 你問的這行：就加在這裡（DOM載入後，元素存在）
+  document.getElementById("serviceSelect").addEventListener("change", () => {
     searchData();
   });
-document.getElementById("serviceSelect")02-*396-*3.9603
-60*/03/.addEventListener("change", searchData);
-
 
   document.getElementById("searchBtn").addEventListener("click", searchData);
 
@@ -486,7 +481,7 @@ document.getElementById("serviceSelect")02-*396-*3.9603
     if (!row) return;
 
     const name = row.children[0].innerText.trim();
-    const found = currentData.find(d => d["醫事機構名稱"] === name); 
+    const found = currentData.find(d => d["醫事機構名稱"] === name);
 
     if (found) showDetails(found);
   });
