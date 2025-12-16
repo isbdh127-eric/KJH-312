@@ -471,6 +471,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("districtSelect").addEventListener("change", () => {
     searchData();
   });
+document.getElementById("serviceSelect")02-*396-*3.9603
+60*/03/.addEventListener("change", searchData);
+
 
   document.getElementById("searchBtn").addEventListener("click", searchData);
 
