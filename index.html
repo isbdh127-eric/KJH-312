@@ -21,17 +21,9 @@
     <div class="filter-controls">
       <div class="select-group">
         <select id="citySelect" class="custom-select"></select>
-        <select id="districtSelect" class="custom-select"></select>	
-	<select id="serviceSelect">
-  	<option value="">全部</option>
-  	<option value="居家醫療">居家醫療</option>
- 	<option value="重度居家醫療">重度居家醫療</option>
- 	<option value="安寧居家療護">安寧居家療護</option>
- 	<option value="居家呼吸照護">居家呼吸照護</option>
-  	<option value="居家中醫醫療">居家中醫醫療</option>
-  	<option value="居家藥事照護">居家藥事照護</option>
- 	<option value="在宅急症照護">在宅急症照護</option>
-	</select>
+        <select id="districtSelect" class="custom-select"></select>
+        <!-- ✅ 新增：第三個下拉（醫療項目） -->
+        <select id="serviceSelect" class="custom-select"></select>
       </div>
 
       <div class="quick-filter-buttons">
@@ -45,10 +37,6 @@
         <input type="text" id="keyword" placeholder="搜尋 機構名稱、地址、團隊..." class="search-input">
         <button id="searchBtn" class="search-btn">搜尋</button>
       </div>
-
-
-
-
 
       <p id="status" class="status-bar">資料載入中...</p>
     </div>
@@ -91,5 +79,4 @@
 
   <script src="script.js"></script>
 </body>
-
 </html>
